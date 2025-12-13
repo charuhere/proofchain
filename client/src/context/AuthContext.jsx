@@ -125,25 +125,11 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("user");
   };
 
-  const updateProfile = async (profileData) => {
-    try {
-      const response = await api.put("/auth/profile", profileData);
 
-      // Update local state
-      const updatedUser = { ...user, ...response.user };
-
-      localStorage.setItem("user", JSON.stringify(updatedUser));
-      setUser(updatedUser);
-      return response;
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    }
-  };
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, error, signup, login, logout, updateProfile }}
+      value={{ user, loading, error, signup, login, logout }}
     >
       {children}
     </AuthContext.Provider>

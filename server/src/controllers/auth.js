@@ -84,33 +84,4 @@ export const getCurrentUser = async (req, res, next) => {
   }
 };
 
-export const updateProfile = async (req, res, next) => {
-  try {
-    const userId = req.userId;
-    const { fullName, phoneNumber, reminderPreference } = req.body;
 
-    const updateData = {};
-    if (fullName) updateData.fullName = fullName;
-    if (phoneNumber) updateData.phoneNumber = phoneNumber;
-    if (reminderPreference) updateData.reminderPreference = reminderPreference;
-
-    const user = await User.findByIdAndUpdate(userId, updateData, { new: true }).select('-password');
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    res.json({
-      message: 'Profile updated successfully',
-      user: {
-        id: user._id,
-        fullName: user.fullName,
-        email: user.email,
-        phoneNumber: user.phoneNumber,
-        reminderPreference: user.reminderPreference,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
