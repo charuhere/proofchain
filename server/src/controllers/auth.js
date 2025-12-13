@@ -1,11 +1,6 @@
 import User from '../config/User.js';
 
-// Superseded by Supabase Auth on Frontend
-// These endpoints now serve to "Sync" the user to MongoDB
-export const signup = async (req, res, next) => {
-  // We can treat signup same as login/sync: ensure mongo user exists
-  return login(req, res, next);
-};
+
 
 export const login = async (req, res, next) => {
   try {
@@ -60,28 +55,6 @@ export const login = async (req, res, next) => {
   }
 };
 
-export const getCurrentUser = async (req, res, next) => {
-  try {
-    const userId = req.userId;
-    const user = await User.findById(userId).select('-password');
 
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    res.json({
-      user: {
-        id: user._id,
-        fullName: user.fullName,
-        email: user.email,
-        phoneNumber: user.phoneNumber,
-        reminderPreference: user.reminderPreference,
-        gmailConnected: user.gmailConnected,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
 
 
