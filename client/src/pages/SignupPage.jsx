@@ -25,7 +25,7 @@ export const SignupPage = () => {
     setLoading(true);
 
     try {
-      await signup(email, password, fullName, confirmPassword);
+      await signup(email, password, fullName);
       navigate("/dashboard");
     } catch (err) {
       setError(err.message || "Signup failed. Please try again.");

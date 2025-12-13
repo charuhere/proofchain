@@ -1,4 +1,5 @@
-import { verifyToken, getTokenFromHeaders } from '../utils/auth.js';
+import jwt from 'jsonwebtoken';
+import { getTokenFromHeaders } from '../utils/auth.js';
 
 /**
  * Middleware to verify JWT token
@@ -17,21 +18,21 @@ export const authMiddleware = (req, res, next) => {
       });
     }
 
-    const decoded = verifyToken(token);
+    // Verify Supabase Token
+    const decoded = jwt.verify(token, process.env.SUPABASE_JWT_SECRET);
 
-    if (!decoded) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid or expired token.'
-      });
-    }
+    // Attach Supabase UID (sub) to request
+    req.supabaseUid = decoded.sub;
 
-    req.userId = decoded.userId;
+    // NOTE: We will populate req.userId (Mongo ID) in the controller or a subsequent middleware
+    // For now, we pass the Supabase ID along.
+
     next();
   } catch (error) {
-    res.status(500).json({
+    console.error('Auth Error:', error.message);
+    res.status(401).json({
       success: false,
-      message: 'Authentication error',
+      message: 'Invalid or expired token.',
       error: error.message
     });
   }

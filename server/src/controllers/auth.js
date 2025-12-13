@@ -1,93 +1,60 @@
-import bcryptjs from 'bcryptjs';
 import User from '../config/User.js';
-import { generateToken, verifyToken } from '../utils/auth.js';
 
+// Superseded by Supabase Auth on Frontend
+// These endpoints now serve to "Sync" the user to MongoDB
 export const signup = async (req, res, next) => {
-  try {
-    const { fullName, email, password, confirmPassword } = req.body;
-
-    // Validation
-    if (!fullName || !email || !password || !confirmPassword) {
-      return res.status(400).json({ error: 'All fields are required' });
-    }
-
-    if (password !== confirmPassword) {
-      return res.status(400).json({ error: 'Passwords do not match' });
-    }
-
-    if (password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters' });
-    }
-
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ error: 'Email already registered' });
-    }
-
-    // Hash password
-    const hashedPassword = await bcryptjs.hash(password, 10);
-
-    // Create user
-    const newUser = new User({
-      fullName,
-      email,
-      password: hashedPassword,
-    });
-
-    await newUser.save();
-
-    // Generate token
-    const token = generateToken(newUser._id);
-
-    res.status(201).json({
-      message: 'User created successfully',
-      token,
-      user: {
-        id: newUser._id,
-        fullName: newUser.fullName,
-        email: newUser.email,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
+  // We can treat signup same as login/sync: ensure mongo user exists
+  return login(req, res, next);
 };
 
 export const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { user: supabaseUser } = req.body;
 
-    // Validation
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
+    if (!supabaseUser || !supabaseUser.id || !supabaseUser.email) {
+      return res.status(400).json({ error: 'Invalid user data provided for sync' });
     }
 
-    // Find user
-    const user = await User.findOne({ email });
+    const { id: supabaseUid, email } = supabaseUser;
+    const fullName = supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.fullName || 'User';
+
+    // Check if user exists by Supabase UID
+    let user = await User.findOne({ supabaseUid });
+
     if (!user) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+      // Fallback: Check by email for legacy users
+      user = await User.findOne({ email });
+
+      if (user) {
+        // Link legacy user
+        user.supabaseUid = supabaseUid;
+        await user.save();
+      } else {
+        // Create New User
+        user = new User({
+          supabaseUid,
+          email,
+          fullName,
+          gmailConnected: false,
+          isVerified: true // Email confirmed by Supabase
+        });
+        await user.save();
+      }
     }
 
-    // Compare password
-    const isPasswordValid = await bcryptjs.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({ error: 'Invalid email or password' });
-    }
-
-    // Generate token
-    const token = generateToken(user._id);
-
+    // Return the USER object (Mongo) so frontend has context
     res.json({
-      message: 'Login successful',
-      token,
+      message: 'User synced successfully',
       user: {
         id: user._id,
         fullName: user.fullName,
         email: user.email,
         phoneNumber: user.phoneNumber,
-      },
+        reminderPreference: user.reminderPreference,
+        gmailConnected: user.gmailConnected,
+      }
     });
+
   } catch (error) {
     next(error);
   }

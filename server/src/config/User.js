@@ -3,6 +3,11 @@ import bcrypt from 'bcryptjs';
 
 const userSchema = new mongoose.Schema(
   {
+    supabaseUid: {
+      type: String,
+      unique: true,
+      sparse: true // Allow null/undefined for existing users initially
+    },
     email: {
       type: String,
       required: true,
@@ -12,7 +17,7 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true
+      required: false // Optional now because Supabase handles auth
     },
     fullName: {
       type: String,
@@ -55,7 +60,7 @@ const userSchema = new mongoose.Schema(
 // Hash password before saving
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
-  
+
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);

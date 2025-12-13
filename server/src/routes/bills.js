@@ -12,6 +12,7 @@ import {
 } from '../controllers/bills.js';
 import { scanInbox, importEmail } from '../controllers/gmailScanner.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { requireUser } from '../middleware/requireUser.js';
 
 const router = express.Router();
 
@@ -30,21 +31,22 @@ const upload = multer({
 });
 
 // All routes require authentication
-router.use(authMiddleware);
+// All routes require authentication and a valid MongoDB user linked
+router.use(authMiddleware, requireUser);
 
 // Bills routes - specific routes FIRST
 router.get('/search', searchBills);
 router.get('/expiring-soon', getBillsExpiringsoon);
 router.post('/upload', upload.single('billImage'), uploadBill);
 router.post('/scan-gmail', scanInbox);
-router.post('/gmail-import/:id', importEmail); 
+router.post('/gmail-import/:id', importEmail);
 
 // Then generic routes
 router.post('/', createBill);
 router.get('/', getAllBills);
 
 router.get('/:id', getBillById);
-router.patch('/:id', updateBill); 
+router.patch('/:id', updateBill);
 router.put('/:id', updateBill);
 router.delete('/:id', deleteBill);
 
