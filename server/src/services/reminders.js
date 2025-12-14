@@ -261,26 +261,26 @@ function generateReminderHTML(bill, daysLeft, userEmail) {
 
       <div class="product-details">
         <div class="detail-row">
-          <span class="detail-label">Product</span>
+          <span class="detail-label">Product: </span>
           <span class="detail-value">${bill.productName}</span>
         </div>
         <div class="detail-row">
-          <span class="detail-label">Purchase Date</span>
+          <span class="detail-label">Purchase Date: </span>
           <span class="detail-value">${purchaseDate}</span>
         </div>
         <div class="detail-row">
-          <span class="detail-label">Warranty Expiry</span>
+          <span class="detail-label">Warranty Expiry: </span>
           <span class="detail-value" style="color: ${statusColor}; font-weight: 700;">${expiryDate}</span>
         </div>
         ${bill.purchasePrice > 0 ? `
         <div class="detail-row">
-          <span class="detail-label">Purchase Price</span>
+          <span class="detail-label">Purchase Price: </span>
           <span class="detail-value">₹${bill.purchasePrice.toFixed(2)}</span>
         </div>
         ` : ''}
         ${bill.storeName ? `
         <div class="detail-row">
-          <span class="detail-label">Store</span>
+          <span class="detail-label">Store: </span>
           <span class="detail-value">${bill.storeName}</span>
         </div>
         ` : ''}

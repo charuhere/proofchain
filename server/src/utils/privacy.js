@@ -1,7 +1,3 @@
-/**
- * Redact sensitive information from text strings
- * Targeted at: SSNs, Credit Cards, Emails, and Phone Numbers
- */
 export const redactSensitiveData = (text) => {
     if (!text) return "";
 

@@ -1,7 +1,5 @@
 import User from '../config/User.js';
 
-
-
 export const login = async (req, res, next) => {
   try {
     const { user: supabaseUser } = req.body;
@@ -54,7 +52,3 @@ export const login = async (req, res, next) => {
     next(error);
   }
 };
-
-
-
-

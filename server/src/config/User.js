@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 
-
 const userSchema = new mongoose.Schema(
   {
     supabaseUid: {
@@ -15,7 +14,6 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true
     },
-
     fullName: {
       type: String,
       trim: true

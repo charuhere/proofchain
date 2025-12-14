@@ -3,13 +3,11 @@ import multer from 'multer';
 import {
   uploadBill,
   getAllBills,
-
   updateBill,
   deleteBill,
-
-
   createBill
 } from '../controllers/bills.js';
+
 import { scanInbox, importEmail } from '../controllers/gmailScanner.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { requireUser } from '../middleware/requireUser.js';
