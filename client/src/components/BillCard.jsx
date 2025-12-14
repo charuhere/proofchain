@@ -8,7 +8,6 @@ export const BillCard = ({ bill, onRefresh, onClaim }) => {
   const [showEditExpiry, setShowEditExpiry] = useState(false);
   const [showKeywordsModal, setShowKeywordsModal] = useState(false); // ✅ New State
   const [deleting, setDeleting] = useState(false);
-  const [billData, setBillData] = useState(bill);
 
   const handleDelete = async () => {
     if (window.confirm("Are you sure you want to delete this bill?")) {
@@ -24,14 +23,13 @@ export const BillCard = ({ bill, onRefresh, onClaim }) => {
     }
   };
 
-  const handleUpdateBill = (updatedBill) => {
-    setBillData(updatedBill);
+  const handleUpdateBill = () => {
     onRefresh();
   };
 
   const getDaysUntilExpiry = () => {
     const today = new Date();
-    const expiry = new Date(billData.expiryDate);
+    const expiry = new Date(bill.expiryDate);
     const diff = expiry - today;
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
   };
@@ -49,8 +47,8 @@ export const BillCard = ({ bill, onRefresh, onClaim }) => {
     daysLeft <= 0
       ? "text-red-600"
       : daysLeft <= 30
-      ? "text-yellow-600"
-      : "text-green-600";
+        ? "text-yellow-600"
+        : "text-green-600";
 
   return (
     <>
@@ -60,18 +58,17 @@ export const BillCard = ({ bill, onRefresh, onClaim }) => {
           <div>
             <h3
               className="text-lg font-bold text-gray-800 line-clamp-1"
-              title={billData.productName}
+              title={bill.productName}
             >
-              {billData.productName}
+              {bill.productName}
             </h3>
-            <p className="text-sm text-gray-600">{billData.storeName}</p>
+            <p className="text-sm text-gray-600">{bill.storeName}</p>
           </div>
           <span
-            className={`px-3 py-1 rounded-full text-xs font-medium ${
-              statusColor[billData.status]
-            }`}
+            className={`px-3 py-1 rounded-full text-xs font-medium ${statusColor[bill.status]
+              }`}
           >
-            {billData.status}
+            {bill.status}
           </span>
         </div>
 
@@ -82,7 +79,7 @@ export const BillCard = ({ bill, onRefresh, onClaim }) => {
         >
           <div className="w-full h-32 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center">
             <img
-              src={billData.billImageUrl}
+              src={bill.billImageUrl}
               alt="Bill Preview"
               className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition"
             />
@@ -100,32 +97,31 @@ export const BillCard = ({ bill, onRefresh, onClaim }) => {
           <div className="flex justify-between">
             <span className="text-gray-600">Purchase Date:</span>
             <span className="font-medium">
-              {new Date(billData.purchaseDate).toLocaleDateString()}
+              {new Date(bill.purchaseDate).toLocaleDateString()}
             </span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-600">Warranty Expiry:</span>
             <span className={`font-medium ${warrantyColor}`}>
-              {new Date(billData.expiryDate).toLocaleDateString()}
+              {new Date(bill.expiryDate).toLocaleDateString()}
             </span>
           </div>
-          {billData.purchasePrice > 0 && (
+          {bill.purchasePrice > 0 && (
             <div className="flex justify-between">
               <span className="text-gray-600">Price:</span>
-              <span className="font-medium">₹{billData.purchasePrice}</span>
+              <span className="font-medium">₹{bill.purchasePrice}</span>
             </div>
           )}
         </div>
 
         {/* Warranty Status Bar */}
         <div
-          className={`p-3 rounded-lg mb-4 text-sm font-medium text-center ${
-            daysLeft <= 0
-              ? "bg-red-100 text-red-700"
-              : daysLeft <= 30
+          className={`p-3 rounded-lg mb-4 text-sm font-medium text-center ${daysLeft <= 0
+            ? "bg-red-100 text-red-700"
+            : daysLeft <= 30
               ? "bg-yellow-100 text-yellow-700"
               : "bg-green-100 text-green-700"
-          }`}
+            }`}
         >
           {daysLeft <= 0
             ? `Expired ${Math.abs(daysLeft)} days ago`
@@ -133,11 +129,11 @@ export const BillCard = ({ bill, onRefresh, onClaim }) => {
         </div>
 
         {/* Keywords Section (Updated) */}
-        {billData.keywords && billData.keywords.length > 0 && (
+        {bill.keywords && bill.keywords.length > 0 && (
           <div className="mb-4">
             <div className="flex flex-wrap gap-1">
               {/* Show first 3 keywords */}
-              {billData.keywords.slice(0, 3).map((keyword, idx) => (
+              {bill.keywords.slice(0, 3).map((keyword, idx) => (
                 <span
                   key={idx}
                   className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded border border-gray-200"
@@ -145,14 +141,14 @@ export const BillCard = ({ bill, onRefresh, onClaim }) => {
                   {keyword}
                 </span>
               ))}
-              
+
               {/* ✅ Clickable "+X" Button */}
-              {billData.keywords.length > 3 && (
-                <button 
+              {bill.keywords.length > 3 && (
+                <button
                   onClick={() => setShowKeywordsModal(true)}
                   className="bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded border border-blue-200 transition font-medium"
                 >
-                  +{billData.keywords.length - 3} more
+                  +{bill.keywords.length - 3} more
                 </button>
               )}
             </div>
@@ -178,7 +174,7 @@ export const BillCard = ({ bill, onRefresh, onClaim }) => {
           </button>
 
           <button
-            onClick={() => onClaim(billData)}
+            onClick={() => onClaim(bill)}
             className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white hover:shadow-md py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition"
           >
             <AlertCircle size={16} /> Claim
@@ -210,18 +206,18 @@ export const BillCard = ({ bill, onRefresh, onClaim }) => {
             </button>
 
             <img
-              src={billData.billImageUrl}
+              src={bill.billImageUrl}
               alt="Full Bill"
               className="max-w-full max-h-[85vh] rounded-lg shadow-2xl bg-white object-contain"
               onClick={(e) => e.stopPropagation()}
             />
 
             <div className="mt-4 text-white text-center">
-              <p className="font-bold text-lg">{billData.productName}</p>
+              <p className="font-bold text-lg">{bill.productName}</p>
               <p className="text-sm opacity-80">
                 Uploaded on{" "}
                 {new Date(
-                  billData.createdAt || Date.now()
+                  bill.createdAt || Date.now()
                 ).toLocaleDateString()}
               </p>
             </div>
@@ -235,7 +231,7 @@ export const BillCard = ({ bill, onRefresh, onClaim }) => {
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm"
           onClick={() => setShowKeywordsModal(false)}
         >
-          <div 
+          <div
             className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 relative"
             onClick={(e) => e.stopPropagation()}
           >
@@ -244,16 +240,16 @@ export const BillCard = ({ bill, onRefresh, onClaim }) => {
                 <Tag size={20} className="text-blue-600" />
                 All Keywords
               </h3>
-              <button 
+              <button
                 onClick={() => setShowKeywordsModal(false)}
                 className="text-gray-400 hover:text-gray-600"
               >
                 <X size={24} />
               </button>
             </div>
-            
+
             <div className="flex flex-wrap gap-2 max-h-60 overflow-y-auto p-1">
-              {billData.keywords.map((keyword, idx) => (
+              {bill.keywords.map((keyword, idx) => (
                 <span
                   key={idx}
                   className="bg-gray-100 text-gray-700 text-sm px-3 py-1.5 rounded-md border border-gray-200"
@@ -264,7 +260,7 @@ export const BillCard = ({ bill, onRefresh, onClaim }) => {
             </div>
 
             <div className="mt-6 text-center">
-              <button 
+              <button
                 onClick={() => setShowKeywordsModal(false)}
                 className="w-full py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg font-medium transition"
               >
@@ -277,7 +273,7 @@ export const BillCard = ({ bill, onRefresh, onClaim }) => {
 
       {/* --- EDIT EXPIRY MODAL --- */}
       <EditExpiryModal
-        bill={billData}
+        bill={bill}
         isOpen={showEditExpiry}
         onClose={() => setShowEditExpiry(false)}
         onUpdate={handleUpdateBill}

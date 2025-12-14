@@ -4,7 +4,6 @@ import { Search } from "lucide-react";
 export const DashboardFilters = ({
     searchQuery,
     setSearchQuery,
-    onSearch,
     filterStatus,
     setFilterStatus,
 }) => {
@@ -23,13 +22,9 @@ export const DashboardFilters = ({
                             placeholder="Search by product, store, or keywords..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            onKeyPress={(e) => e.key === "Enter" && onSearch()}
                             className="input pl-10"
                         />
                     </div>
-                    <button onClick={onSearch} className="btn btn-primary">
-                        Search
-                    </button>
                 </div>
             </div>
 
@@ -41,8 +36,8 @@ export const DashboardFilters = ({
                             key={status}
                             onClick={() => setFilterStatus(status)}
                             className={`px-4 py-2 rounded-lg capitalize ${filterStatus === status
-                                    ? "bg-blue-600 text-white"
-                                    : "bg-gray-200 text-gray-800"
+                                ? "bg-blue-600 text-white"
+                                : "bg-gray-200 text-gray-800"
                                 }`}
                         >
                             {status}

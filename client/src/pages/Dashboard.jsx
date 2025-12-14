@@ -65,12 +65,6 @@ export const Dashboard = () => {
     }
   };
 
-  // handleSearch is no longer needed as useEffect handles it automatically
-  // But we keep the prop for the DashboardFilters component compatibility
-  const handleSearch = () => {
-    // Triggers re-render via state change if needed, but useEffect does the work
-  };
-
   const handleConnectGmail = async () => {
     try {
       // 1. Ask backend for the Google Login URL
@@ -103,7 +97,6 @@ export const Dashboard = () => {
     }
   };
 
-  // Function to handle when user clicks "Import Bill" on a specific email
   const importEmailBill = async (emailId) => {
     try {
       setPreviewLoading(true);
@@ -118,8 +111,8 @@ export const Dashboard = () => {
       // Remove from list and close preview
       setFoundEmails((prev) => prev.filter((e) => e.gmailId !== emailId));
       setSelectedEmail(null);
-      setFilterStatus("verified"); // Switch to verified filter to show imported bill
-      fetchBills(); // Refresh main list
+      setFilterStatus("verified"); 
+      fetchBills();
     } catch (error) {
       console.error(error);
       alert("Failed to import bill. Please try again.");
@@ -157,7 +150,7 @@ export const Dashboard = () => {
         <DashboardFilters
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
-          onSearch={handleSearch}
+
           filterStatus={filterStatus}
           setFilterStatus={setFilterStatus}
         />

@@ -16,6 +16,21 @@ const EditExpiryModal = ({ bill, isOpen, onClose, onUpdate }) => {
   const [successMessage, setSuccessMessage] = useState("");
   const [savedData, setSavedData] = useState(null);
 
+  // Sync state when modal opens or bill changes
+  React.useEffect(() => {
+    if (isOpen && bill) {
+      setExpiryDate(
+        bill.expiryDate
+          ? new Date(bill.expiryDate).toISOString().split("T")[0]
+          : ""
+      );
+      setReminderDaysBefore(bill.reminderDaysBefore || 30);
+      setSuccessMessage("");
+      setError("");
+      setSavedData(null);
+    }
+  }, [isOpen, bill]);
+
   // ✅ Helper to reset success state when user edits inputs
   const handleInputChange = (setter, value) => {
     setSuccessMessage(""); // Hide "Saved" message immediately
@@ -141,15 +156,14 @@ const EditExpiryModal = ({ bill, isOpen, onClose, onUpdate }) => {
             />
             {daysLeft !== null && (
               <p
-                className={`text-sm mt-2 font-medium ${
-                  daysLeft > 0
+                className={`text-sm mt-2 font-medium ${daysLeft > 0
                     ? daysLeft > 90
                       ? "text-green-600"
                       : daysLeft > 30
-                      ? "text-yellow-600"
-                      : "text-red-600"
+                        ? "text-yellow-600"
+                        : "text-red-600"
                     : "text-red-600"
-                }`}
+                  }`}
               >
                 {daysLeft > 0 ? `${daysLeft} days left` : "Already expired"}
               </p>
@@ -204,16 +218,15 @@ const EditExpiryModal = ({ bill, isOpen, onClose, onUpdate }) => {
           >
             {savedData ? "Close" : "Cancel"}
           </button>
-          
+
           <button
             onClick={handleSave}
             // ✅ FIX: Only disable when loading. Never disabled by success.
-            disabled={loading} 
-            className={`flex-1 px-4 py-2 text-white rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2 ${
-                successMessage 
-                  ? "bg-green-600 hover:bg-green-700" // Green if saved (but still clickable)
-                  : "bg-blue-600 hover:bg-blue-700"   // Blue otherwise
-            }`}
+            disabled={loading}
+            className={`flex-1 px-4 py-2 text-white rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2 ${successMessage
+                ? "bg-green-600 hover:bg-green-700" // Green if saved (but still clickable)
+                : "bg-blue-600 hover:bg-blue-700"   // Blue otherwise
+              }`}
           >
             {loading ? (
               <>

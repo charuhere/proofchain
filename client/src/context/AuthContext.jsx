@@ -46,7 +46,7 @@ export const AuthProvider = ({ children }) => {
 
       // Sync with MongoDB Backend
       // This ensures we have a MongoDB User ID to attach to bills etc.
-      await syncUserWithBackend(user, token);
+      await syncUserWithBackend(user);
 
       setLoading(false);
     } catch (err) {
@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const syncUserWithBackend = async (supabaseUser, token) => {
+  const syncUserWithBackend = async (supabaseUser) => {
     try {
       // We send the Supabase User object to backend.
       // Backend will find or create the Mongo User.
