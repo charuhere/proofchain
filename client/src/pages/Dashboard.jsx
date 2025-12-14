@@ -9,9 +9,12 @@ import { DashboardFilters } from "../components/DashboardFilters";
 import { GmailDetectedList } from "../components/GmailDetectedList";
 import { BillGrid } from "../components/BillGrid";
 
+import Fuse from "fuse.js";
+
 export const Dashboard = () => {
   const { user } = useAuth(); // Header manages logout now, but we might need user info
   const [bills, setBills] = useState([]);
+  const [filteredBills, setFilteredBills] = useState([]); // Store filtered results separately
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -26,6 +29,29 @@ export const Dashboard = () => {
     fetchBills();
   }, []);
 
+  // Update filtered bills when search query, filter status, or bills change
+  useEffect(() => {
+    let result = bills;
+
+    // 1. Filter by Status first
+    result = result.filter((bill) => bill.status === filterStatus);
+
+    // 2. Fuzzy Search if query exists
+    if (searchQuery.trim()) {
+      const fuse = new Fuse(result, {
+        keys: ["productName", "storeName", "keywords", "brand"],
+        threshold: 0.4, // 0.0 = exact match, 1.0 = match anything. 0.4 is good for typos.
+        distance: 100,
+        includeScore: true,
+      });
+
+      const searchResults = fuse.search(searchQuery);
+      result = searchResults.map((r) => r.item);
+    }
+
+    setFilteredBills(result);
+  }, [bills, searchQuery, filterStatus]);
+
   const fetchBills = async () => {
     try {
       setLoading(true);
@@ -39,25 +65,11 @@ export const Dashboard = () => {
     }
   };
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) {
-      fetchBills();
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const response = await api.get(`/bills/search?query=${searchQuery}`);
-      setBills(response.data);
-    } catch (err) {
-      setError("Search failed");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+  // handleSearch is no longer needed as useEffect handles it automatically
+  // But we keep the prop for the DashboardFilters component compatibility
+  const handleSearch = () => {
+    // Triggers re-render via state change if needed, but useEffect does the work
   };
-
-  const filteredBills = bills.filter((bill) => bill.status === filterStatus);
 
   const handleConnectGmail = async () => {
     try {

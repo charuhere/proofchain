@@ -3,11 +3,11 @@ import multer from 'multer';
 import {
   uploadBill,
   getAllBills,
-  getBillById,
+
   updateBill,
   deleteBill,
-  searchBills,
-  getBillsExpiringsoon,
+
+
   createBill
 } from '../controllers/bills.js';
 import { scanInbox, importEmail } from '../controllers/gmailScanner.js';
@@ -35,8 +35,8 @@ const upload = multer({
 router.use(authMiddleware, requireUser);
 
 // Bills routes - specific routes FIRST
-router.get('/search', searchBills);
-router.get('/expiring-soon', getBillsExpiringsoon);
+
+
 router.post('/upload', upload.single('billImage'), uploadBill);
 router.post('/scan-gmail', scanInbox);
 router.post('/gmail-import/:id', importEmail);
@@ -45,7 +45,7 @@ router.post('/gmail-import/:id', importEmail);
 router.post('/', createBill);
 router.get('/', getAllBills);
 
-router.get('/:id', getBillById);
+
 router.patch('/:id', updateBill);
 router.put('/:id', updateBill);
 router.delete('/:id', deleteBill);

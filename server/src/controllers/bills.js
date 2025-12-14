@@ -46,7 +46,6 @@ export const uploadBill = async (req, res) => {
         claimDetails = await extractClaimDetails(extractedText);
       } catch (error) {
         console.error('Error processing with Groq:', error);
-        // Continue without Groq processing if it fails
       }
     }
 
@@ -109,37 +108,7 @@ export const getAllBills = async (req, res) => {
   }
 };
 
-/**
- * Get Single Bill
- */
-export const getBillById = async (req, res) => {
-  try {
-    const { id } = req.params;
 
-    const bill = await Bill.findOne({
-      _id: id,
-      userId: req.userId
-    });
-
-    if (!bill) {
-      return res.status(404).json({
-        success: false,
-        message: 'Bill not found'
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      data: bill
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch bill',
-      error: error.message
-    });
-  }
-};
 
 /**
  * Update Bill - status, expiry date, reminder settings
@@ -148,14 +117,6 @@ export const updateBill = async (req, res) => {
   try {
     const { id } = req.params;
     const { status, reminderDaysBefore, expiryDate } = req.body;
-
-    // --- DEBUG LOGS ---
-    console.log("--------------------------------");
-    console.log("PATCH REQUEST RECEIVED");
-    console.log("Bill ID from URL:", id);
-    console.log("User ID from Token:", req.userId);
-    console.log("Body Data:", req.body);
-    // ------------------
 
     const updateData = {};
     if (status) updateData.status = status;
@@ -174,14 +135,13 @@ export const updateBill = async (req, res) => {
     );
 
     if (!bill) {
-      console.log("ERROR: Bill not found in DB for this user.");
+
       return res.status(404).json({
         success: false,
         message: 'Bill not found'
       });
     }
 
-    console.log("SUCCESS: Bill updated!");
     res.status(200).json({
       success: true,
       message: 'Bill updated successfully',
@@ -235,72 +195,9 @@ export const deleteBill = async (req, res) => {
 /**
  * Search Bills by Keywords
  */
-export const searchBills = async (req, res) => {
-  try {
-    const { query } = req.query;
 
-    if (!query) {
-      return res.status(400).json({
-        success: false,
-        message: 'Search query is required'
-      });
-    }
 
-    const bills = await Bill.find({
-      userId: req.userId,
-      $or: [
-        { productName: { $regex: query, $options: 'i' } },
-        { storeName: { $regex: query, $options: 'i' } },
-        { keywords: { $regex: query, $options: 'i' } }
-      ]
-    });
 
-    res.status(200).json({
-      success: true,
-      count: bills.length,
-      data: bills
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Search failed',
-      error: error.message
-    });
-  }
-};
-
-/**
- * Get Bills Expiring Soon
- */
-export const getBillsExpiringsoon = async (req, res) => {
-  try {
-    const { days = 30 } = req.query;
-    const today = new Date();
-    const futureDate = new Date(today);
-    futureDate.setDate(futureDate.getDate() + parseInt(days));
-
-    const bills = await Bill.find({
-      userId: req.userId,
-      expiryDate: {
-        $gte: today,
-        $lte: futureDate
-      },
-      status: { $ne: 'expired' }
-    }).sort({ expiryDate: 1 });
-
-    res.status(200).json({
-      success: true,
-      count: bills.length,
-      data: bills
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch bills',
-      error: error.message
-    });
-  }
-};
 
 /**
  * Create Bill - Direct creation from JSON data (e.g., from Gmail import)
