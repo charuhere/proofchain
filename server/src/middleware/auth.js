@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { getTokenFromHeaders } from '../utils/auth.js';
+
 
 /**
  * Middleware to verify JWT token
@@ -9,7 +9,12 @@ import { getTokenFromHeaders } from '../utils/auth.js';
  */
 export const authMiddleware = (req, res, next) => {
   try {
-    const token = getTokenFromHeaders(req);
+    const authHeader = req.headers.authorization;
+    let token = null;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.slice(7);
+    }
+    // Fallback? Generally Supabase uses headers.
 
     if (!token) {
       return res.status(401).json({

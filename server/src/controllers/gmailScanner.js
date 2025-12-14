@@ -1,6 +1,7 @@
 import { google } from 'googleapis';
 import User from '../config/User.js';
 import { extractProductInfo, generateKeywords, extractClaimDetails } from '../services/groq.js';
+import { redactSensitiveData } from '../utils/privacy.js';
 
 // Re-use your env variables
 const oauth2Client = new google.auth.OAuth2(
@@ -12,14 +13,14 @@ const oauth2Client = new google.auth.OAuth2(
 export const scanInbox = async (req, res) => {
   try {
     const userId = req.userId; // From authMiddleware
-    
+
     // 1. Get User's Refresh Token from DB
     const user = await User.findById(userId).select('+gmailRefreshToken');
-    
+
     if (!user || !user.gmailRefreshToken) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Gmail not connected. Please connect Gmail first.' 
+      return res.status(401).json({
+        success: false,
+        message: 'Gmail not connected. Please connect Gmail first.'
       });
     }
 
@@ -48,7 +49,7 @@ export const scanInbox = async (req, res) => {
 
     // 4. Fetch details for each email
     const emailDetails = [];
-    
+
     for (const msg of messages) {
       const email = await gmail.users.messages.get({
         userId: 'me',
@@ -61,7 +62,7 @@ export const scanInbox = async (req, res) => {
       const from = headers.find(h => h.name === 'From')?.value || 'Unknown Sender';
       const date = headers.find(h => h.name === 'Date')?.value;
       const snippet = email.data.snippet || '';
-      
+
       // Extract attachments info
       const payload = email.data.payload;
       let attachments = [];
@@ -85,7 +86,7 @@ export const scanInbox = async (req, res) => {
         snippet,
         contentPreview: snippet.substring(0, 300),
         attachments,
-        status: 'found' 
+        status: 'found'
       });
     }
 
@@ -101,29 +102,18 @@ export const scanInbox = async (req, res) => {
 
   } catch (error) {
     console.error('Gmail Scan Error:', error);
-    
+
     // If token is invalid, user might need to reconnect
     if (error.response?.status === 400 || error.response?.status === 401) {
-       return res.status(401).json({ message: "Gmail connection expired. Please reconnect." });
+      return res.status(401).json({ message: "Gmail connection expired. Please reconnect." });
     }
-    
+
     res.status(500).json({ message: 'Failed to scan inbox' });
   }
 };
 
 
-// Helper: Redact sensitive info
-const redactSensitiveData = (text) => {
-  // Redact email addresses
-  text = text.replace(/[\w\.-]+@[\w\.-]+\.\w+/g, '[REDACTED_EMAIL]');
-  // Redact phone numbers (US format: 123-456-7890 or (123) 456-7890)
-  text = text.replace(/(\+?1[-.\s]?)?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}/g, '[REDACTED_PHONE]');
-  // Redact credit card patterns (16 digits)
-  text = text.replace(/\d{4}[\s\-]?\d{4}[\s\-]?\d{4}[\s\-]?\d{4}/g, '[REDACTED_CC]');
-  // Redact SSN (XXX-XX-XXXX)
-  text = text.replace(/\d{3}-\d{2}-\d{4}/g, '[REDACTED_SSN]');
-  return text;
-};
+
 
 export const importEmail = async (req, res) => {
   try {
@@ -153,7 +143,7 @@ export const importEmail = async (req, res) => {
     // D. Helper to find text body
     let emailBody = '';
     let attachments = [];
-    
+
     if (payload.parts) {
       payload.parts.forEach(part => {
         // Extract text body

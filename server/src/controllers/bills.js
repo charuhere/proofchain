@@ -2,6 +2,7 @@ import Bill from '../config/Bill.js';
 import { uploadBillImage, deleteBillImage } from '../services/supabase.js';
 import { extractTextFromImage } from '../services/ocr.js';
 import { extractProductInfo, generateKeywords, extractClaimDetails } from '../services/groq.js';
+import { redactSensitiveData } from '../utils/privacy.js';
 
 /**
  * Upload Bill - Initial step
@@ -41,9 +42,10 @@ export const uploadBill = async (req, res) => {
 
     if (extractedText) {
       try {
-        productInfo = await extractProductInfo(extractedText);
-        keywords = await generateKeywords(extractedText, productName);
-        claimDetails = await extractClaimDetails(extractedText);
+        const redactedText = redactSensitiveData(extractedText);
+        productInfo = await extractProductInfo(redactedText);
+        keywords = await generateKeywords(redactedText, productName);
+        claimDetails = await extractClaimDetails(redactedText);
       } catch (error) {
         console.error('Error processing with Groq:', error);
       }
@@ -191,12 +193,6 @@ export const deleteBill = async (req, res) => {
     });
   }
 };
-
-/**
- * Search Bills by Keywords
- */
-
-
 
 
 /**
