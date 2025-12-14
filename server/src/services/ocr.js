@@ -1,6 +1,5 @@
 import vision from '@google-cloud/vision';
 
-// Initialize Vision client
 let client;
 
 try {
@@ -51,36 +50,4 @@ export const extractTextFromImage = async (imageBuffer) => {
   }
 };
 
-/**
- * Extract text from image URL using Google Cloud Vision
- * @param {string} imageUrl - URL of the image
- * @returns {Promise<string>} - Extracted text
- */
-export const extractTextFromUrl = async (imageUrl) => {
-  try {
-    if (!client) {
-      console.warn('Vision client not available');
-      return '';
-    }
 
-    const request = {
-      image: {
-        source: {
-          imageUri: imageUrl
-        }
-      }
-    };
-
-    const [result] = await client.textDetection(request);
-    const detections = result.textAnnotations;
-
-    if (!detections || detections.length === 0) {
-      return '';
-    }
-
-    return detections[0].description || '';
-  } catch (error) {
-    console.error('OCR Error:', error);
-    throw new Error(`OCR extraction failed: ${error.message}`);
-  }
-};

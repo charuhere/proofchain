@@ -34,7 +34,7 @@ export const extractProductInfo = async (billText) => {
 
     const response = await groq.chat.completions.create({
       // UPDATED MODEL HERE
-      model: 'llama-3.3-70b-versatile', 
+      model: 'llama-3.3-70b-versatile',
       messages: [
         {
           role: 'system',
@@ -95,7 +95,7 @@ Return format strictly: {"keywords": ["keyword1", "keyword2", ...]}
 
     const content = response.choices[0]?.message?.content || '{"keywords": []}';
     const parsed = safeJSONParse(content);
-    
+
     return parsed?.keywords || [productName.toLowerCase()];
 
   } catch (error) {
@@ -104,37 +104,7 @@ Return format strictly: {"keywords": ["keyword1", "keyword2", ...]}
   }
 };
 
-/**
- * Check if email is warranty-related
- */
-export const isWarrantyRelated = async (emailSubject, emailBody) => {
-  try {
-    if (!groq) return false;
 
-    const response = await groq.chat.completions.create({
-      // UPDATED MODEL HERE
-      model: 'llama-3.3-70b-versatile',
-      messages: [
-        {
-          role: 'user',
-          content: `Is this email related to a product purchase, warranty, or bill?
-Subject: ${emailSubject}
-Body: ${emailBody.substring(0, 300)}
-
-Return strictly JSON: {"isWarranty": true/false}`
-        }
-      ]
-    });
-
-    const content = response.choices[0]?.message?.content || '{}';
-    const parsed = safeJSONParse(content);
-    return parsed?.isWarranty || false;
-
-  } catch (error) {
-    console.error('Groq Email Check Error:', error.message);
-    return false;
-  }
-};
 
 /**
  * Extract warranty claim details (brand, store contact, warranty details)
