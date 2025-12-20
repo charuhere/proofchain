@@ -13,5 +13,5 @@ build/
 .idea/
 *.key
 
-server/proofchain-vision-key.json
+proofchain-vision-key.json
 

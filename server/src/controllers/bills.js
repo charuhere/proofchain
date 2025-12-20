@@ -3,6 +3,7 @@ import { uploadBillImage, deleteBillImage } from '../services/supabase.js';
 import { extractTextFromImage } from '../services/ocr.js';
 import { extractProductInfo, generateKeywords, extractClaimDetails } from '../services/groq.js';
 import { redactSensitiveData } from '../utils/privacy.js';
+import { searchClaimLinks } from '../services/warrantyClaimService.js';
 
 /**
  * Upload Bill - Initial step
@@ -51,6 +52,20 @@ export const uploadBill = async (req, res) => {
       }
     }
 
+    // FALLBACK: Extract brand from keywords or product name if not found
+    let brandName = claimDetails.brand;
+    if (!brandName || brandName === 'Unknown' || brandName === 'Unknown Brand') {
+      // Try to find brand in keywords (usually first keyword is the brand)
+      if (keywords && keywords.length > 0) {
+        // First keyword is often the brand
+        brandName = keywords[0];
+      } else {
+        // Extract first word from product name as brand
+        const firstWord = productName.trim().split(/\s+/)[0];
+        brandName = firstWord;
+      }
+    }
+
     // Create bill document
     const newBill = new Bill({
       userId: req.userId,
@@ -64,7 +79,7 @@ export const uploadBill = async (req, res) => {
       billImageUrl,
       status: 'verified',
       // Warranty claim details
-      brand: claimDetails.brand,
+      brand: brandName,
       storeEmail: claimDetails.storeEmail,
       storePhone: claimDetails.storePhone,
       warrantyDetailsText: claimDetails.warrantyDetailsText
@@ -257,6 +272,47 @@ export const createBill = async (req, res) => {
       success: false,
       message: 'Failed to create bill',
       error: error.message
+    })
+  }
+};
+
+/**
+ * Find Warranty Claim Links
+ * Searches the internet for warranty claim resources for a specific bill
+ */
+export const findClaimLinks = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Find the bill
+    const bill = await Bill.findOne({ _id: id, userId: req.userId });
+
+    if (!bill) {
+      return res.status(404).json({
+        success: false,
+        message: 'Bill not found'
+      });
+    }
+
+    // Search for claim links using Serper API (fresh search every time)
+    const claimLinks = await searchClaimLinks({
+      productName: bill.productName,
+      brand: bill.brand,
+      storeName: bill.storeName
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Warranty claim links found successfully',
+      data: claimLinks
+    });
+  } catch (error) {
+    console.error('Find claim links error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to find warranty claim links',
+      error: error.message
     });
   }
 };
+

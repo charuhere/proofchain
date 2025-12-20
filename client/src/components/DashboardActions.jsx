@@ -1,4 +1,3 @@
-import React from "react";
 import { Plus, Search } from "lucide-react";
 
 export const DashboardActions = ({ onUpload, onConnectGmail, onScanInbox }) => {

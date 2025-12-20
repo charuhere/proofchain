@@ -33,7 +33,18 @@ export const Dashboard = () => {
   useEffect(() => {
     let result = bills;
 
-    // 1. Filter by Status first
+    // 0. Mark expired bills automatically (check expiry date)
+    const today = new Date();
+    result = result.map((bill) => {
+      const expiryDate = new Date(bill.expiryDate);
+      // If expired and not already marked as expired, mark it
+      if (expiryDate < today && bill.status !== "expired") {
+        return { ...bill, status: "expired" };
+      }
+      return bill;
+    });
+
+    // 1. Filter by Status
     result = result.filter((bill) => bill.status === filterStatus);
 
     // 2. Fuzzy Search if query exists
@@ -111,7 +122,7 @@ export const Dashboard = () => {
       // Remove from list and close preview
       setFoundEmails((prev) => prev.filter((e) => e.gmailId !== emailId));
       setSelectedEmail(null);
-      setFilterStatus("verified"); 
+      setFilterStatus("verified");
       fetchBills();
     } catch (error) {
       console.error(error);

@@ -59,8 +59,25 @@ const billSchema = new mongoose.Schema(
       default: false
     },
     emailSource: {
-      type: String 
-    }
+      type: String
+    },
+    // Warranty claim links cache
+    claimLinks: {
+      searchedAt: Date,
+      results: {
+        type: Object,
+        default: {}
+      },
+      expiresAt: Date
+    },
+    // Claim details from OCR
+    brand: {
+      type: String,
+      default: 'Unknown'
+    },
+    storeEmail: String,
+    storePhone: String,
+    warrantyDetailsText: String
   },
   {
     timestamps: true

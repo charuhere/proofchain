@@ -5,7 +5,8 @@ import {
   getAllBills,
   updateBill,
   deleteBill,
-  createBill
+  createBill,
+  findClaimLinks
 } from '../controllers/bills.js';
 
 import { scanInbox, importEmail } from '../controllers/gmailScanner.js';
@@ -38,6 +39,7 @@ router.use(authMiddleware, requireUser);
 router.post('/upload', upload.single('billImage'), uploadBill);
 router.post('/scan-gmail', scanInbox);
 router.post('/gmail-import/:id', importEmail);
+router.post('/:id/find-claim-links', findClaimLinks);
 
 // Then generic routes
 router.post('/', createBill);
