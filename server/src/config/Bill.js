@@ -61,15 +61,6 @@ const billSchema = new mongoose.Schema(
     emailSource: {
       type: String
     },
-    // Warranty claim links cache
-    claimLinks: {
-      searchedAt: Date,
-      results: {
-        type: Object,
-        default: {}
-      },
-      expiresAt: Date
-    },
     // Claim details from OCR
     brand: {
       type: String,

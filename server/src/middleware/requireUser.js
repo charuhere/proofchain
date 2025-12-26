@@ -1,46 +1,55 @@
 import User from '../config/User.js';
 
 /**
- * Middleware to find or create a MongoDB user for the authenticated Supabase user.
+ * Find existing MongoDB user or create new one from Supabase data.
+ * Handles legacy email-based migration automatically.
+ * 
+ * @param {string} supabaseUid - Supabase user ID
+ * @param {string} email - User email
+ * @param {string} fullName - User's full name
+ * @returns {Promise<User|null>} - MongoDB user document or null
+ */
+export const findOrCreateUser = async (supabaseUid, email, fullName = 'User') => {
+    // 1. Find by Supabase UID (primary lookup)
+    let user = await User.findOne({ supabaseUid });
+
+    // 2. Legacy migration: find by email and link
+    if (!user && email) {
+        user = await User.findOne({ email });
+        if (user) {
+            user.supabaseUid = supabaseUid;
+            await user.save();
+        }
+    }
+
+    // 3. Create new user if not found
+    if (!user && email) {
+        user = new User({
+            supabaseUid,
+            email,
+            fullName,
+            gmailConnected: false,
+            isVerified: true
+        });
+        await user.save();
+    }
+
+    return user;
+};
+
+/**
+ * Middleware to ensure a valid MongoDB user exists for the authenticated Supabase user.
  * Populates req.userId with the MongoDB _id.
  */
 export const requireUser = async (req, res, next) => {
     try {
-        const supabaseUid = req.supabaseUid;
-        const { email, fullName, picture } = req.body.user || {}; // user metadata from client if signing up/syncing for first time
-
-        // 1. Try to find by supabaseUid
-        let user = await User.findOne({ supabaseUid });
-
-        // 2. If not found by uid, try to find by email (legacy migration)
-        if (!user && email) {
-            user = await User.findOne({ email });
-            if (user) {
-                // Link existing user
-                user.supabaseUid = supabaseUid;
-                await user.save();
-            }
-        }
-
-        // 3. If still not found, create new user (Sync on the fly)
-        if (!user && email) {
-            // If we have email, we can create. If only checking auth for existing user, we might fail here.
-            user = new User({
-                supabaseUid,
-                email,
-                fullName: fullName || 'New User',
-                profileImage: picture || null,
-                gmailConnected: false
-            });
-            await user.save();
-        }
+        const { email, fullName } = req.body.user || {};
+        const user = await findOrCreateUser(req.supabaseUid, email, fullName);
 
         if (!user) {
-            // Fallback: If we don't have user info in body and not in DB
-            // Ideally client should call a /sync endpoint first, but let's try to handle graceful failure
             return res.status(404).json({
                 success: false,
-                message: 'User account not found or not synced. Please Log In again to sync.'
+                message: 'User not found. Please log in again.'
             });
         }
 
@@ -50,8 +59,7 @@ export const requireUser = async (req, res, next) => {
         console.error('User Sync Error:', error);
         res.status(500).json({
             success: false,
-            message: 'Failed to synchronize user account',
-            error: error.message
+            message: 'Failed to synchronize user account'
         });
     }
 };

@@ -4,16 +4,14 @@ let groq;
 
 try {
   if (process.env.GROQ_API_KEY) {
-    groq = new Groq({
-      apiKey: process.env.GROQ_API_KEY
-    });
+    groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
   }
 } catch (error) {
   console.warn('Groq client initialization warning:', error.message);
 }
 
 /**
- * Helper to safely parse JSON from AI response
+ * Safely parse JSON from AI response (handles markdown code blocks)
  */
 const safeJSONParse = (text) => {
   try {
@@ -26,125 +24,86 @@ const safeJSONParse = (text) => {
 };
 
 /**
- * Extract product information from bill text
+ * Generic Groq API caller - reduces code duplication across extraction functions
+ * 
+ * @param {string} systemPrompt - System role instructions
+ * @param {string} userPrompt - User prompt with data to analyze
+ * @param {any} defaultValue - Fallback value if API fails
+ * @param {number} temperature - AI temperature (0.1 = precise, 0.3+ = creative)
+ * @returns {Promise<any>} - Parsed JSON response or default value
  */
-export const extractProductInfo = async (billText) => {
-  try {
-    if (!groq) return { price: 0, store: 'Unknown' };
+const callGroq = async (systemPrompt, userPrompt, defaultValue, temperature = 0.1) => {
+  if (!groq) return defaultValue;
 
+  try {
     const response = await groq.chat.completions.create({
-      // UPDATED MODEL HERE
       model: 'llama-3.3-70b-versatile',
       messages: [
-        {
-          role: 'system',
-          content: 'You are a JSON-only API. You extract product data from receipts.'
-        },
-        {
-          role: 'user',
-          content: `Extract product information from this bill text. 
-Return strictly valid JSON with these fields: productName, price (number), store, itemCount.
-If a field is not found, use reasonable defaults or null.
-
-Bill text:
-${billText}
-`
-        }
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
       ],
-      temperature: 0.1,
+      temperature,
     });
-
-    const content = response.choices[0]?.message?.content || '{}';
-    return safeJSONParse(content) || { price: 0, store: 'Unknown' };
-
+    return safeJSONParse(response.choices[0]?.message?.content) || defaultValue;
   } catch (error) {
-    console.error('Groq Product Info Error:', error.message);
-    return { productName: "Unidentified Item", price: 0, store: 'Unknown' };
+    console.error('Groq API Error:', error.message);
+    return defaultValue;
   }
 };
 
 /**
- * Generate keywords for bill based on product and features
+ * Extract product information from bill/receipt text
+ */
+export const extractProductInfo = async (billText) => {
+  return callGroq(
+    'You are a JSON-only API. Extract product data from receipts.',
+    `Extract product information from this bill text. 
+Return strictly valid JSON with these fields: productName, price (number), store, itemCount.
+If a field is not found, use reasonable defaults or null.
+
+Bill text:
+${billText}`,
+    { price: 0, store: 'Unknown' }
+  );
+};
+
+/**
+ * Generate search keywords for a product based on bill context
  */
 export const generateKeywords = async (billText, productName) => {
-  try {
-    if (!groq) return [productName.toLowerCase()];
-
-    const response = await groq.chat.completions.create({
-      // UPDATED MODEL HERE
-      model: 'llama-3.3-70b-versatile',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a JSON-only API. Generate SEO keywords.'
-        },
-        {
-          role: 'user',
-          content: `Generate 5-10 relevant search keywords for this product based on the text.
+  const result = await callGroq(
+    'You are a JSON-only API. Generate SEO keywords.',
+    `Generate 5-10 relevant search keywords for this product based on the text.
 Include category, brand, and key features.
 
 Product: ${productName}
 Bill Context: ${billText.substring(0, 500)}
 
-Return format strictly: {"keywords": ["keyword1", "keyword2", ...]}
-`
-        }
-      ],
-      temperature: 0.3,
-    });
-
-    const content = response.choices[0]?.message?.content || '{"keywords": []}';
-    const parsed = safeJSONParse(content);
-
-    return parsed?.keywords || [productName.toLowerCase()];
-
-  } catch (error) {
-    console.error('Groq Keyword Gen Error:', error.message);
-    return [productName.toLowerCase()];
-  }
+Return format strictly: {"keywords": ["keyword1", "keyword2", ...]}`,
+    { keywords: [productName.toLowerCase()] },
+    0.3
+  );
+  return result?.keywords || [productName.toLowerCase()];
 };
 
-
-
 /**
- * Extract warranty claim details (brand, store contact, warranty details)
+ * Extract warranty claim details (brand, store contact info)
  */
 export const extractClaimDetails = async (billText) => {
-  try {
-    if (!groq) return { brand: 'Unknown', storeEmail: '', storePhone: '', warrantyDetailsText: '' };
-
-    const response = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a JSON-only API. Extract warranty claim details from receipts/invoices.'
-        },
-        {
-          role: 'user',
-          content: `Extract warranty claim details from this bill/email text.
+  const result = await callGroq(
+    'You are a JSON-only API. Extract warranty claim details from receipts/invoices.',
+    `Extract warranty claim details from this bill/email text.
 Return strictly valid JSON with these fields: brand (product brand/manufacturer), storeEmail (store email if present), storePhone (store phone if present), warrantyDetailsText (any warranty text found, limit to 200 chars).
 If a field is not found, use empty string or null.
 
 Bill text:
-${billText}`
-        }
-      ],
-      temperature: 0.1,
-    });
-
-    const content = response.choices[0]?.message?.content || '{}';
-    const result = safeJSONParse(content);
-    return {
-      brand: result?.brand || 'Unknown Brand',
-      storeEmail: result?.storeEmail || '',
-      storePhone: result?.storePhone || '',
-      warrantyDetailsText: result?.warrantyDetailsText || ''
-    };
-
-  } catch (error) {
-    console.error('Groq Claim Details Error:', error.message);
-    return { brand: 'Unknown', storeEmail: '', storePhone: '', warrantyDetailsText: '' };
-  }
+${billText}`,
+    { brand: 'Unknown Brand', storeEmail: '', storePhone: '', warrantyDetailsText: '' }
+  );
+  return {
+    brand: result?.brand || 'Unknown Brand',
+    storeEmail: result?.storeEmail || '',
+    storePhone: result?.storePhone || '',
+    warrantyDetailsText: result?.warrantyDetailsText || ''
+  };
 };
-

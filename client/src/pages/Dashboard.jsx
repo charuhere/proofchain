@@ -12,7 +12,7 @@ import { BillGrid } from "../components/BillGrid";
 import Fuse from "fuse.js";
 
 export const Dashboard = () => {
-  const { user } = useAuth(); // Header manages logout now, but we might need user info
+  const { user } = useAuth();
   const [bills, setBills] = useState([]);
   const [filteredBills, setFilteredBills] = useState([]); // Store filtered results separately
   const [loading, setLoading] = useState(true);

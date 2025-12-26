@@ -33,7 +33,6 @@ app.get('/health', (req, res) => {
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/bills', billRoutes);
-app.use('/api/auth', authRoutes); 
 app.use('/api/auth/google', googleAuthRoutes);
 
 // 404 handler
@@ -54,13 +53,13 @@ const startServer = async () => {
   try {
     // Connect to MongoDB
     await connectDB();
-    
+
     // Setup cron job for daily reminder checks
     cron.schedule('0 9 * * *', () => {
       console.log('Running scheduled warranty reminder check...');
       checkAndSendReminders().catch(err => console.error(err));
     });
-    
+
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });

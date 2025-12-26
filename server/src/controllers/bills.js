@@ -6,6 +6,15 @@ import { redactSensitiveData } from '../utils/privacy.js';
 import { searchClaimLinks } from '../services/warrantyClaimService.js';
 
 /**
+ * Calculate warranty expiry date from purchase date
+ */
+const calculateExpiryDate = (purchaseDate, warrantyYears = 1) => {
+  const expiry = new Date(purchaseDate);
+  expiry.setFullYear(expiry.getFullYear() + parseInt(warrantyYears));
+  return expiry;
+};
+
+/**
  * Upload Bill - Initial step
  * User enters product details first
  */
@@ -21,10 +30,9 @@ export const uploadBill = async (req, res) => {
       });
     }
 
-    // Calculate expiry date
+    // Calculate expiry date using helper
     const purchase = new Date(purchaseDate);
-    const expiry = new Date(purchase);
-    expiry.setFullYear(expiry.getFullYear() + parseInt(warrantyYears));
+    const expiry = calculateExpiryDate(purchase, warrantyYears);
 
     // Upload image to Supabase
     const billImageUrl = await uploadBillImage(
@@ -235,15 +243,8 @@ export const createBill = async (req, res) => {
       });
     }
 
-    // Calculate expiry date if not provided
-    let finalExpiryDate = expiryDate;
-    if (!finalExpiryDate) {
-      const purchase = new Date(purchaseDate);
-      const expiry = new Date(purchase);
-      const years = warrantyYears || 1;
-      expiry.setFullYear(expiry.getFullYear() + years);
-      finalExpiryDate = expiry;
-    }
+    // Calculate expiry date if not provided using helper
+    const finalExpiryDate = expiryDate || calculateExpiryDate(purchaseDate, warrantyYears || 1);
 
     // Create bill
     const newBill = new Bill({

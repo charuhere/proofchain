@@ -30,7 +30,6 @@ const upload = multer({
 });
 
 // All routes require authentication
-// All routes require authentication and a valid MongoDB user linked
 router.use(authMiddleware, requireUser);
 
 // Bills routes - specific routes FIRST
@@ -47,7 +46,6 @@ router.get('/', getAllBills);
 
 
 router.patch('/:id', updateBill);
-router.put('/:id', updateBill);
 router.delete('/:id', deleteBill);
 
 

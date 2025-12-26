@@ -3,33 +3,43 @@ import User from '../config/User.js';
 import { extractProductInfo, generateKeywords, extractClaimDetails } from '../services/groq.js';
 import { redactSensitiveData } from '../utils/privacy.js';
 
-// Re-use your env variables
 const oauth2Client = new google.auth.OAuth2(
   process.env.GMAIL_CLIENT_ID,
   process.env.GMAIL_CLIENT_SECRET,
   process.env.GOOGLE_REDIRECT_URI
 );
 
+/**
+ * Extract common email headers (Subject, From, Date)
+ */
+const getEmailHeaders = (headers) => ({
+  subject: headers.find(h => h.name === 'Subject')?.value || 'No Subject',
+  from: headers.find(h => h.name === 'From')?.value || 'Unknown Sender',
+  date: headers.find(h => h.name === 'Date')?.value || new Date().toISOString()
+});
+
+/**
+ * Setup Gmail client with user's refresh token
+ */
+const getGmailClient = async (userId) => {
+  const user = await User.findById(userId).select('+gmailRefreshToken');
+  if (!user?.gmailRefreshToken) return null;
+
+  oauth2Client.setCredentials({ refresh_token: user.gmailRefreshToken });
+  return { gmail: google.gmail({ version: 'v1', auth: oauth2Client }), user };
+};
+
 export const scanInbox = async (req, res) => {
   try {
-    const userId = req.userId; // From authMiddleware
-
-    // 1. Get User's Refresh Token from DB
-    const user = await User.findById(userId).select('+gmailRefreshToken');
-
-    if (!user || !user.gmailRefreshToken) {
+    // Get Gmail client using helper
+    const client = await getGmailClient(req.userId);
+    if (!client) {
       return res.status(401).json({
         success: false,
         message: 'Gmail not connected. Please connect Gmail first.'
       });
     }
-
-    // 2. Setup Google Client
-    oauth2Client.setCredentials({
-      refresh_token: user.gmailRefreshToken
-    });
-
-    const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+    const { gmail, user } = client;
 
     // 3. Search for recent emails (Last 30 days, containing keywords)
     // q: query format used in Gmail search bar
@@ -58,9 +68,7 @@ export const scanInbox = async (req, res) => {
       });
 
       const headers = email.data.payload.headers;
-      const subject = headers.find(h => h.name === 'Subject')?.value || 'No Subject';
-      const from = headers.find(h => h.name === 'From')?.value || 'Unknown Sender';
-      const date = headers.find(h => h.name === 'Date')?.value;
+      const { subject, from, date } = getEmailHeaders(headers);
       const snippet = email.data.snippet || '';
 
       // Extract attachments info
@@ -117,15 +125,16 @@ export const scanInbox = async (req, res) => {
 
 export const importEmail = async (req, res) => {
   try {
-    const { id } = req.params; // The Gmail Message ID
-    const userId = req.userId;
+    const { id } = req.params;
 
-    // A. Setup Google Client again
-    const user = await User.findById(userId).select('+gmailRefreshToken');
-    oauth2Client.setCredentials({ refresh_token: user.gmailRefreshToken });
-    const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+    // Setup Gmail client using helper
+    const client = await getGmailClient(req.userId);
+    if (!client) {
+      return res.status(401).json({ success: false, message: 'Gmail not connected' });
+    }
+    const { gmail } = client;
 
-    // B. Fetch Full Email Content
+    // Fetch Full Email Content
     const email = await gmail.users.messages.get({
       userId: 'me',
       id: id,
@@ -133,12 +142,7 @@ export const importEmail = async (req, res) => {
     });
 
     const payload = email.data.payload;
-    const headers = payload.headers;
-
-    // C. Extract email metadata
-    const subject = headers.find(h => h.name === 'Subject')?.value || 'No Subject';
-    const from = headers.find(h => h.name === 'From')?.value || 'Unknown Sender';
-    const emailDate = headers.find(h => h.name === 'Date')?.value || new Date().toISOString();
+    const { subject, from, date: emailDate } = getEmailHeaders(payload.headers);
 
     // D. Helper to find text body
     let emailBody = '';
