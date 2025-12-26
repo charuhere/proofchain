@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import api from "../utils/api";
 import { UploadBillModal } from "../components/UploadBillModal";
@@ -12,7 +12,6 @@ import { BillGrid } from "../components/BillGrid";
 import Fuse from "fuse.js";
 
 export const Dashboard = () => {
-  const { user } = useAuth();
   const [bills, setBills] = useState([]);
   const [filteredBills, setFilteredBills] = useState([]); // Store filtered results separately
   const [loading, setLoading] = useState(true);

@@ -1,4 +1,3 @@
-import React from "react";
 import { BillCard } from "./BillCard";
 
 export const BillGrid = ({ loading, error, bills, onRefresh, onClaim }) => {

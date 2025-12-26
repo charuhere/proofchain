@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Copy, Mail, Phone, AlertCircle, ExternalLink, Search, Loader2 } from "lucide-react";
 import api from "../utils/api";
 
